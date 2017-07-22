@@ -1,2 +1,16 @@
+*~
+.DS_Store
 *.class
 *.log
+.idea/
+/*.iml
+/target/
+/project/target/
+/bin/
+/tmp/
+/dist
+/out
+/.classpath/
+/.project/
+/.settings/
+/RUNNING_PID
