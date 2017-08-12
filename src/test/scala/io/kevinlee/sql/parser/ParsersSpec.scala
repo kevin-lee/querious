@@ -17,7 +17,7 @@ class ParsersSpec extends WordSpec
     "number.parse(\"1234\")" should {
       "return Success(1234, 4)" in {
         val expected = Success(1234, 4)
-        val actual = Parsers.number.parse("1234")
+        val actual = Parsers.digit.parse("1234")
         actual should be (expected)
       }
     }
@@ -28,7 +28,7 @@ class ParsersSpec extends WordSpec
           whenever(i >= 0) {
             val input = i.toString
             val expected = Success(i, input.length)
-            val actual = Parsers.number.parse(input)
+            val actual = Parsers.digit.parse(input)
             actual should be (expected)
           }
         }
@@ -40,7 +40,7 @@ class ParsersSpec extends WordSpec
         forAll(Gen.choose(1, 10)) { i =>
           val input = i.toString
           val expected = Success(i, input.length)
-          val actual = Parsers.number.parse(input)
+          val actual = Parsers.digit.parse(input)
           println(s"i: $i / actual: $actual / expected: $expected")
           actual should be (expected)
         }
@@ -48,5 +48,63 @@ class ParsersSpec extends WordSpec
     }
 
 
+  }
+
+  "Parsers.alphabetLower" when {
+    "Parsers.alphabetLower(lower case Char)" should {
+      val expected = true
+      s"return $expected" in {
+        forAll(Gen.alphaLowerChar) { c =>
+          whenever(Character.isLowerCase(c)) {
+            val actual = Parsers.alphabetLower(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.alphabetLower(upper case Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.alphaUpperChar) { c =>
+          whenever(Character.isUpperCase(c)) {
+            val actual = Parsers.alphabetLower(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.alphabetLower(digit Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.numChar) { c =>
+          whenever(Character.isDigit(c)) {
+            val actual = Parsers.alphabetLower(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.alphabetLower(non lower case Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.choose(1, 1000).map(_.toChar)) { c =>
+          whenever(!Character.isLowerCase(c)) {
+            val actual = Parsers.alphabetLower(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "lower case alphabet String.forall(Parsers.alphabetLower)" should {
+      val expected = true
+      s"return $expected" in {
+        forAll(Gen.alphaLowerStr) { value =>
+          whenever(value.trim.nonEmpty && value.forall(Character.isLowerCase)) {
+            val actual = value.forall(Parsers.alphabetLower)
+            actual should be (expected)
+          }
+        }
+      }
+    }
   }
 }

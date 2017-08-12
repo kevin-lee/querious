@@ -7,7 +7,9 @@ organization := "io.kevinlee"
 version := "0.0.1"
 
 libraryDependencies ++= Seq(
-  "org.scalacheck" %% "scalacheck" % "1.12.6" % Test,
-  "org.scalatest"  %% "scalatest"  % "2.2.6"  % Test,
+  "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
+  "org.scalatest"  %% "scalatest"  % "3.0.1"  % Test,
+//  "org.scalacheck" %% "scalacheck" % "1.12.6" % Test,
+//  "org.scalatest"  %% "scalatest"  % "2.2.6"  % Test,
   "com.lihaoyi"    %% "fastparse"  % "0.4.3"
 )

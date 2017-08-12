@@ -14,7 +14,7 @@ object ParsersSpecWithScalaCheckOnly extends Properties("String") {
     (i >= 0) ==> {
       val input = i.toString
       val expected = Success(i, input.length)
-      val actual = Parsers.number.parse(input)
+      val actual = Parsers.digit.parse(input)
       actual == expected
     }
   }
@@ -23,7 +23,7 @@ object ParsersSpecWithScalaCheckOnly extends Properties("String") {
     forAll(Gen.choose(1, 10)) { i =>
       val input = i.toString
       val expected = Success(i, input.length)
-      val actual = Parsers.number.parse(input)
+      val actual = Parsers.digit.parse(input)
       actual == expected
     }
 }
