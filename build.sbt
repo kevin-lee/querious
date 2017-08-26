@@ -6,6 +6,8 @@ name := "sql-parser-scala"
 organization := "io.kevinlee"
 version := "0.0.1"
 
+scalacOptions += "-feature"
+
 libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
   "org.scalatest"  %% "scalatest"  % "3.0.1"  % Test,

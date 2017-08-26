@@ -4,6 +4,7 @@ import fastparse.core.Parsed.Success
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, WordSpec}
+import StringInterpolation._
 
 /**
   * @author Kevin Lee
@@ -50,61 +51,181 @@ class ParsersSpec extends WordSpec
 
   }
 
-  "Parsers.alphabetLower" when {
-    "Parsers.alphabetLower(lower case Char)" should {
+  "Parsers.AlphabetLower" when {
+    "Parsers.AlphabetLower(lower case Char)" should {
       val expected = true
       s"return $expected" in {
         forAll(Gen.alphaLowerChar) { c =>
           whenever(Character.isLowerCase(c)) {
-            val actual = Parsers.alphabetLower(c)
+            val actual = Parsers.AlphabetLower(c)
             actual should be (expected)
           }
         }
       }
     }
-    "Parsers.alphabetLower(upper case Char)" should {
+    "Parsers.AlphabetLower(upper case Char)" should {
       val expected = false
       s"return $expected" in {
         forAll(Gen.alphaUpperChar) { c =>
           whenever(Character.isUpperCase(c)) {
-            val actual = Parsers.alphabetLower(c)
+            val actual = Parsers.AlphabetLower(c)
             actual should be (expected)
           }
         }
       }
     }
-    "Parsers.alphabetLower(digit Char)" should {
+    "Parsers.AlphabetLower(digit Char)" should {
       val expected = false
       s"return $expected" in {
         forAll(Gen.numChar) { c =>
           whenever(Character.isDigit(c)) {
-            val actual = Parsers.alphabetLower(c)
+            val actual = Parsers.AlphabetLower(c)
             actual should be (expected)
           }
         }
       }
     }
-    "Parsers.alphabetLower(non lower case Char)" should {
+    "Parsers.AlphabetLower(non lower case Char)" should {
       val expected = false
       s"return $expected" in {
         forAll(Gen.choose(1, 1000).map(_.toChar)) { c =>
           whenever(!Character.isLowerCase(c)) {
-            val actual = Parsers.alphabetLower(c)
+            val actual = Parsers.AlphabetLower(c)
             actual should be (expected)
           }
         }
       }
     }
-    "lower case alphabet String.forall(Parsers.alphabetLower)" should {
+    "lower case alphabet String.forall(Parsers.AlphabetLower)" should {
       val expected = true
       s"return $expected" in {
         forAll(Gen.alphaLowerStr) { value =>
           whenever(value.trim.nonEmpty && value.forall(Character.isLowerCase)) {
-            val actual = value.forall(Parsers.alphabetLower)
+            val actual = value.forall(Parsers.AlphabetLower)
             actual should be (expected)
           }
         }
       }
     }
   }
+
+
+  "Given Parsers.AlphabetUpper" when {
+    "Parsers.AlphabetUpper(upper case Char)" should {
+      val expected = true
+      s"return $expected" in {
+        forAll(Gen.alphaUpperChar) { c =>
+          whenever(Character.isUpperCase(c)) {
+            val actual = Parsers.AlphabetUpper(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.AlphabetUpper(lower case Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.alphaLowerChar) { c =>
+          whenever(Character.isLowerCase(c)) {
+            val actual = Parsers.AlphabetUpper(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.AlphabetUpper(digit Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.numChar) { c =>
+          whenever(Character.isDigit(c)) {
+            val actual = Parsers.AlphabetUpper(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "Parsers.AlphabetUpper(non upper case Char)" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.choose(1, 1000).map(_.toChar)) { c =>
+          whenever(!Character.isUpperCase(c)) {
+            val actual = Parsers.AlphabetUpper(c)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+    "upper case alphabet String.forall(Parsers.AlphabetUpper)" should {
+      val expected = true
+      s"return $expected" in {
+        forAll(Gen.alphaUpperStr) { value =>
+          whenever(value.trim.nonEmpty && value.forall(Character.isUpperCase)) {
+            val actual = value.forall(Parsers.AlphabetUpper)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+  }
+
+  "Parsers.Whitespace" when {
+    val input = " \t\r\n"
+    esc"""Parsers.Whitespace(one of "$input")""" should {
+      val expected = true
+      s"return $expected" in {
+        forAll(Gen.oneOf(input)) { value =>
+          whenever(input.contains(value)) {
+            val actual = Parsers.Whitespace(value)
+            actual should be(expected)
+          }
+
+        }
+      }
+    }
+    esc"""Parsers.Whitespace(none of "$input")""" should {
+      val expected = false
+      s"return $expected" in {
+        forAll(Gen.alphaNumChar) { value =>
+          whenever(!input.contains(value)) {
+            val actual = Parsers.Whitespace(value)
+            actual should be(expected)
+          }
+
+        }
+      }
+    }
+  }
+
+  "Parsers.Digit" when {
+    "Parsers.Digit(digit char)" should {
+      val expected = true
+      s"return $expected" in {
+
+        forAll(Gen.numChar) { value =>
+          whenever(value.isDigit) {
+            val actual = Parsers.Digit(value)
+            actual should be (expected)
+          }
+        }
+
+      }
+    }
+
+    "Parsers.Digit(digit char)" should {
+      val expected = false
+      s"return $expected" in {
+
+        forAll(Gen.alphaChar) { value =>
+          whenever(!value.isDigit) {
+            val actual = Parsers.Digit(value)
+            actual should be (expected)
+          }
+        }
+
+      }
+    }
+
+  }
+
+
 }
