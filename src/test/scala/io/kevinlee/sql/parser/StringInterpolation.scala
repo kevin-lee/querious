@@ -9,7 +9,11 @@ object StringInterpolation extends App {
 
       val builder = new StringBuilder(strings.next)
       while (strings.hasNext) {
-        builder append expression.next.toString.replaceAllLiterally("\n", "\\n").replaceAllLiterally("\r", "\\r").replaceAllLiterally("\"", """\"""")
+        builder append expression.next.toString
+                                 .replaceAllLiterally("\n", "\\n")
+                                 .replaceAllLiterally("\r", "\\r")
+                                 .replaceAllLiterally("\t", "\\t")
+                                 .replaceAllLiterally("\"", """\"""")
         builder append strings.next
       }
       builder.toString
