@@ -15,15 +15,27 @@ object Parsers {
     override val toString: String = name
   }
 
-  val digit: P[Int] = P( CharIn('0'to'9').rep(1).!.map(_.toInt) )
+  val AlphabetLower: NamedFunction[Char, Boolean] =
+    NamedFunction('a' to 'z' contains (_: Char), "AlphabetLower")
 
-  val AlphabetLower = NamedFunction('a' to 'z' contains (_: Char), "AlphabetLower")
+  val AlphabetUpper: NamedFunction[Char, Boolean] =
+    NamedFunction('A' to 'Z' contains (_: Char), "AlphabetUpper")
 
-  val AlphabetUpper = NamedFunction('A' to 'Z' contains (_: Char), "AlphabetUpper")
+  val Whitespace: NamedFunction[Char, Boolean] =
+    NamedFunction(" \t\r\n" contains (_: Char), "Whitespace")
 
-  val Whitespace = NamedFunction(" \t\r\n" contains (_: Char), "Whitespace")
+  val Digit: NamedFunction[Char, Boolean] =
+    NamedFunction('0' to '9' contains (_: Char), "Digit")
 
-  val Digit = NamedFunction('0' to '9' contains (_: Char), "Digit")
+  val alphabetLower: P[String] = P(CharsWhile(AlphabetLower).!)
+
+  val alphabetUpper: P[String] = P(CharsWhile(AlphabetUpper).!)
+
+  val digit: P[String] = P( CharsWhile(Digit).!)
+
+//  var alphaNumeric: P[String] = P((CharsWhile(Digit) | CharsWhile(AlphabetLower)).rep(1).!)
+  var alphaNumeric: P[String] = P(digit | alphabetLower | alphabetUpper).rep(1).!
+
 
   """
     |SELECT *
