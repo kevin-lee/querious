@@ -33,8 +33,9 @@ object Parsers {
 
   val digit: P[String] = P( CharsWhile(Digit).!)
 
-//  var alphaNumeric: P[String] = P((CharsWhile(Digit) | CharsWhile(AlphabetLower)).rep(1).!)
-  var alphaNumeric: P[String] = P(digit | alphabetLower | alphabetUpper).rep(1).!
+  val alphaNumeric: P[String] = P(digit | alphabetLower | alphabetUpper).rep(1).!
+
+  val space: P[String] = P(CharsWhile(Whitespace).!)
 
 
   """

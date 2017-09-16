@@ -427,4 +427,80 @@ class ParsersSpec extends WordSpec
     }
 
   }
+
+  "Parsers.space" when {
+    """Parsers.space.parse("")""" should {
+      "return Failure(_, 0, _)" in {
+        val actual = Parsers.space.parse("")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    """Parsers.space.parse(" ")""" should {
+      val expected = Success(" ", 1)
+      esc"""return $expected""" in {
+        val actual = Parsers.space.parse(" ")
+        actual should be (expected)
+      }
+    }
+
+    """Parsers.space.parse("\t")""" should {
+      val expected = Success("\t", 1)
+      esc"""return $expected""" in {
+        val actual = Parsers.space.parse("\t")
+        actual should be (expected)
+      }
+    }
+
+    """Parsers.space.parse("\n")""" should {
+      val expected = Success("\n", 1)
+      esc"""return $expected""" in {
+        val actual = Parsers.space.parse("\n")
+        actual should be (expected)
+      }
+    }
+
+    """Parsers.space.parse("\r")""" should {
+      val expected = Success("\r", 1)
+      esc"""return $expected""" in {
+        val actual = Parsers.space.parse("\r")
+        actual should be (expected)
+      }
+    }
+
+    forAll(Gen.alphaNumStr) { value =>
+      whenever(value.nonEmpty && value.forall(!" \t\n\r".contains(_))) {
+        raw"""Parsers.space.parse("$value")""" should {
+          esc"""return Failure(_, 0, _)""" in {
+            val actual = Parsers.space.parse(value)
+            actual should matchPattern { case Failure(_, 0, _) => }
+          }
+        }
+      }
+    }
+
+    forAll(
+      Gen.oneOf(Seq(' ', '\t', '\n', '\r')),
+      Gen.alphaNumStr,
+      Gen.choose(1, 10)
+    ) { (whitespace: Char, nonWhiteSpace: String, howMany: Int) =>
+      whenever(
+        " \t\n\r".contains(whitespace) &&
+        nonWhiteSpace.nonEmpty &&
+        nonWhiteSpace.forall(!" \t\n\r".contains(_)) &&
+        (howMany >= 1 && howMany <= 10)
+      ) {
+        val whitespaceString = whitespace.toString * howMany
+        val value = whitespaceString + nonWhiteSpace
+        raw"""Parsers.space.parse("$value")""" should {
+          val expected = Success(whitespaceString, whitespaceString.length)
+          esc"""return $expected""" in {
+            val actual = Parsers.space.parse(value)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+  }
 }
