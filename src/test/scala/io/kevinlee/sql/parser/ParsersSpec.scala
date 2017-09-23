@@ -14,50 +14,6 @@ class ParsersSpec extends WordSpec
                      with GeneratorDrivenPropertyChecks
                      with Matchers {
 
-  "Parsers.number Spec" when {
-    "number.parse(\"1234\")" should {
-      """return Success("1234", 4)""" in {
-        val expected = Success("1234", 4)
-        val actual = Parsers.digit.parse("1234")
-        actual should be (expected)
-      }
-    }
-
-    "number.parse(\"\")" should {
-      "return Failure(_, 0, _)" in {
-        val actual = Parsers.digit.parse("")
-        actual should matchPattern { case Failure(_, 0, _) => }
-      }
-    }
-
-    "number.parse(non-negative int in String)" should {
-      "return Success(int parsed, the length of the String)" in {
-        forAll { (i: Int) =>
-          whenever(i >= 0) {
-            val input = i.toString
-            val expected = Success(input, input.length)
-            val actual = Parsers.digit.parse(input)
-            actual should be (expected)
-          }
-        }
-      }
-    }
-
-    "number.parse(int between 0 and 10 in String)" should {
-      "return Success(int parsed, the length of the String)" in {
-        forAll(Gen.choose(1, 10)) { i =>
-          val input = i.toString
-          val expected = Success(input, input.length)
-          val actual = Parsers.digit.parse(input)
-          println(s"i: $i / actual: $actual / expected: $expected")
-          actual should be (expected)
-        }
-      }
-    }
-
-
-  }
-
   "Parsers.AlphabetLower" when {
     "Parsers.AlphabetLower(lower case Char)" should {
       val expected = true
@@ -234,42 +190,42 @@ class ParsersSpec extends WordSpec
 
   }
 
-  "Parsers.alphabetLower" when {
-    """Parsers.alphabetLower("")""" should {
+  "Parsers.alphabetsLower" when {
+    """Parsers.alphabetsLower("")""" should {
       "return Failure(_, 0, _)" in {
-        val actual = Parsers.alphabetLower.parse("")
+        val actual = Parsers.alphabetsLower.parse("")
         actual should matchPattern { case Failure(_, 0, _) => }
       }
     }
 
-    """Parsers.alphabetLower(alphabet lower case String)""" should {
+    """Parsers.alphabetsLower(alphabet lower case String)""" should {
       "return Success(parsed value, length)" in {
         forAll(Gen.alphaLowerStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isLower)) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphabetLower.parse(value)
+            val actual = Parsers.alphabetsLower.parse(value)
             actual should be (expected)
           }
         }
       }
     }
 
-    """Parsers.alphabetLower(alphabet upper case String)""" should {
+    """Parsers.alphabetsLower(alphabet upper case String)""" should {
       "return Failure(_, 0, _)" in {
         forAll(Gen.alphaUpperStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isUpper)) {
-            val actual = Parsers.alphabetLower.parse(value)
+            val actual = Parsers.alphabetsLower.parse(value)
             actual should matchPattern { case Failure(_, 0, _) => }
           }
         }
       }
     }
 
-    """Parsers.alphabetLower(digit String)""" should {
+    """Parsers.alphabetsLower(digit String)""" should {
       "return Failure(_, 0, _)" in {
         forAll(Gen.numStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isDigit)) {
-            val actual = Parsers.alphabetLower.parse(value)
+            val actual = Parsers.alphabetsLower.parse(value)
             actual should matchPattern { case Failure(_, 0, _) => }
           }
         }
@@ -278,42 +234,42 @@ class ParsersSpec extends WordSpec
 
   }
 
-  "Parsers.alphabetUpper" when {
-    """Parsers.alphabetUpper("")""" should {
+  "Parsers.alphabetsUpper" when {
+    """Parsers.alphabetsUpper("")""" should {
       "return Failure(_, 0, _)" in {
-        val actual = Parsers.alphabetUpper.parse("")
+        val actual = Parsers.alphabetsUpper.parse("")
         actual should matchPattern { case Failure(_, 0, _) => }
       }
     }
 
-    """Parsers.alphabetUpper(alphabet upper case String)""" should {
+    """Parsers.alphabetsUpper(alphabet upper case String)""" should {
       "return Success(parsed value, length)" in {
         forAll(Gen.alphaUpperStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isUpper)) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphabetUpper.parse(value)
+            val actual = Parsers.alphabetsUpper.parse(value)
             actual should be (expected)
           }
         }
       }
     }
 
-    """Parsers.alphabetUpper(alphabet lower case String)""" should {
+    """Parsers.alphabetsUpper(alphabet lower case String)""" should {
       "return Failure(_, 0, _)" in {
         forAll(Gen.alphaLowerStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isLower)) {
-            val actual = Parsers.alphabetUpper.parse(value)
+            val actual = Parsers.alphabetsUpper.parse(value)
             actual should matchPattern { case Failure(_, 0, _) => }
           }
         }
       }
     }
 
-    """Parsers.alphabetUpper(digit String)""" should {
+    """Parsers.alphabetsUpper(digit String)""" should {
       "return Failure(_, 0, _)" in {
         forAll(Gen.numStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isDigit)) {
-            val actual = Parsers.alphabetUpper.parse(value)
+            val actual = Parsers.alphabetsUpper.parse(value)
             actual should matchPattern { case Failure(_, 0, _) => }
           }
         }
@@ -321,35 +277,157 @@ class ParsersSpec extends WordSpec
     }
 
   }
+
+  "Parsers.alphabets" when {
+    """Parsers.alphabets.parse("")""" should {
+      "return Failure(_, 0, _)" in {
+        val actual = Parsers.alphabets.parse("")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    """Parsers.alphabets.parse(some digit String)""" should {
+      "return Failure(_, 0, _)" in {
+        forAll(Gen.numStr) { value =>
+          whenever(value.nonEmpty && value.forall(_.isDigit)) {
+            val actual = Parsers.alphabets.parse(value)
+            actual should matchPattern { case Failure(_, 0, _) => }
+          }
+        }
+      }
+    }
+
+    "Parsers.alphabets.parse(some uppercase alphabets)" should {
+      "return Success(some uppercase alphabets, the length of the alphabets)" in {
+        forAll(Gen.alphaUpperStr) { value =>
+          whenever(value.nonEmpty && value.forall(_.isUpper)) {
+            val expected = Success(value, value.length)
+            val actual = Parsers.alphabets.parse(value)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+    "Parsers.alphabets.parse(some lowercase alphabets)" should {
+      "return Success(some lowercase alphabets, the length of the alphabets)" in {
+        forAll(Gen.alphaLowerStr) { value =>
+          whenever(value.nonEmpty && value.forall(_.isLower)) {
+            val expected = Success(value, value.length)
+            val actual = Parsers.alphabets.parse(value)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+    "Parsers.alphabets.parse(some alphabets)" should {
+      "return Success(some alphabets, the length of the alphabets)" in {
+        forAll(Gen.alphaStr) { value =>
+          whenever(value.nonEmpty && value.forall(c => (c >= 65 && c <= 90) || (c >= 97 && c <= 122))) {
+            val expected = Success(value, value.length)
+            val actual = Parsers.alphabets.parse(value)
+            actual should be (expected)
+          }
+
+        }
+      }
+    }
+
+    """Parsers.alphabets.parse("øå")""" should {
+      "return Failure(_, 0, _)" in {
+            val value = "øå"
+            val actual = Parsers.alphabets.parse(value)
+            actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    val nonAlphaNumeric = Seq(' ', '\t', '\n', '\r', '#', '@', '$', '%', '*', '(', ')')
+    s"""Parsers.alphabets.parse(one of $nonAlphaNumeric)""" should {
+      "return Failure(_, 0, _)" in {
+        forAll(Gen.listOf(Gen.oneOf(nonAlphaNumeric))) { value =>
+          whenever(value.nonEmpty && value.forall(nonAlphaNumeric.contains(_))) {
+            val actual = Parsers.alphabets.parse(value.mkString)
+            actual should matchPattern { case Failure(_, 0, _) => }
+          }
+        }
+      }
+    }
+  }
+
+
+  "Parsers.digits Spec" when {
+    "digits.parse(\"1234\")" should {
+      """return Success("1234", 4)""" in {
+        val expected = Success("1234", 4)
+        val actual = Parsers.digits.parse("1234")
+        actual should be (expected)
+      }
+    }
+
+    "digits.parse(\"\")" should {
+      "return Failure(_, 0, _)" in {
+        val actual = Parsers.digits.parse("")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    "digits.parse(non-negative int in String)" should {
+      "return Success(int parsed, the length of the String)" in {
+        forAll { (i: Int) =>
+          whenever(i >= 0) {
+            val input = i.toString
+            val expected = Success(input, input.length)
+            val actual = Parsers.digits.parse(input)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+    "digits.parse(int between 0 and 10 in String)" should {
+      "return Success(int parsed, the length of the String)" in {
+        forAll(Gen.choose(1, 10)) { i =>
+          val input = i.toString
+          val expected = Success(input, input.length)
+          val actual = Parsers.digits.parse(input)
+          println(s"i: $i / actual: $actual / expected: $expected")
+          actual should be (expected)
+        }
+      }
+    }
+
+
+  }
+
 
   "Parsers.alphaNumeric" when {
     """Parsers.alphaNumeric("")""" should {
       s"return Failure(_, 0, _)" in {
-        val actual = Parsers.alphaNumeric.parse("")
+        val actual = Parsers.alphaNumerics.parse("")
         actual should matchPattern { case Failure(_, 0, _) => }
       }
     }
 
-    "Parsers.alphaNumeric(digit char)" should {
+    "Parsers.alphaNumerics(digit char)" should {
       s"return Success(parsed value, length)" in {
         forAll(Gen.numStr) { value =>
           whenever(value.forall(_.isDigit) && value.nonEmpty) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphaNumeric.parse(value)
+            val actual = Parsers.alphaNumerics.parse(value)
             actual should be (expected)
           }
         }
-
       }
     }
 
-    "Parsers.alphaNumeric(digit String1 + non digit String + digit String2)" should {
+    "Parsers.alphaNumerics(digit String1 + non digit String + digit String2)" should {
       s"return Success(digit String1, digit String1 length)" in {
         forAll(Gen.numStr, Gen.numStr) { (value1: String, value2: String) =>
           whenever(value1.forall(_.isDigit) && value1.nonEmpty &&
             value2.forall(_.isDigit) && value2.nonEmpty) {
             val expected = Success(value1, value1.length)
-            val actual = Parsers.alphaNumeric.parse(value1 + " " + value2)
+            val actual = Parsers.alphaNumerics.parse(value1 + " " + value2)
             actual should be (expected)
           }
         }
@@ -358,25 +436,24 @@ class ParsersSpec extends WordSpec
     }
 
 
-    "Parsers.alphaNumeric(alphabet lower case char)" should {
+    "Parsers.alphaNumerics(alphabet lower case char)" should {
       s"return Success(parsed value, length)" in {
         forAll(Gen.alphaLowerStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isLower)) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphaNumeric.parse(value)
+            val actual = Parsers.alphaNumerics.parse(value)
             actual should be (expected)
           }
         }
-
       }
     }
 
-    "Parsers.alphaNumeric(alphabet upper case char)" should {
+    "Parsers.alphaNumerics(alphabet upper case char)" should {
       s"return Success(parsed value, length)" in {
         forAll(Gen.alphaUpperStr) { value =>
           whenever(value.nonEmpty && value.forall(_.isUpper)) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphaNumeric.parse(value)
+            val actual = Parsers.alphaNumerics.parse(value)
             actual should be (expected)
           }
         }
@@ -384,13 +461,13 @@ class ParsersSpec extends WordSpec
       }
     }
 
-    "Parsers.alphaNumeric(alphabet lower + upper + digit String)" should {
+    "Parsers.alphaNumerics(alphabet lower + upper + digit String)" should {
       s"return Success(parsed value, length)" in {
         forAll(Gen.alphaNumStr) { value =>
           whenever(value.nonEmpty &&
                    value.forall(x => x.isUpper || x.isLower || x.isDigit)) {
             val expected = Success(value, value.length)
-            val actual = Parsers.alphaNumeric.parse(value)
+            val actual = Parsers.alphaNumerics.parse(value)
             actual should be (expected)
           }
         }
@@ -398,7 +475,7 @@ class ParsersSpec extends WordSpec
       }
     }
 
-    "Parsers.alphaNumeric(alphabet lower + upper + digit String with non alpha numeric String)" should {
+    "Parsers.alphaNumerics(alphabet lower + upper + digit String with non alpha numeric String)" should {
       s"return Success(only first valid alphanumeric String value, length)" in {
         val nonAlphaNumeric = Seq(' ', '#', '%')
         forAll(
@@ -411,7 +488,7 @@ class ParsersSpec extends WordSpec
                    value.forall(x => x.isUpper || x.isLower || x.isDigit || nonAlphaNumeric.mkString.contains(x))) {
             val nonAlphaNumericTaken = value.takeWhile(!nonAlphaNumeric.contains(_))
 
-            val actual = Parsers.alphaNumeric.parse(value)
+            val actual = Parsers.alphaNumerics.parse(value)
             if (nonAlphaNumericTaken.isEmpty) {
               actual should matchPattern { case Failure(_, 0, _) => }
             } else {
@@ -428,51 +505,51 @@ class ParsersSpec extends WordSpec
 
   }
 
-  "Parsers.space" when {
-    """Parsers.space.parse("")""" should {
+  "Parsers.spaces" when {
+    """Parsers.spaces.parse("")""" should {
       "return Failure(_, 0, _)" in {
-        val actual = Parsers.space.parse("")
+        val actual = Parsers.spaces.parse("")
         actual should matchPattern { case Failure(_, 0, _) => }
       }
     }
 
-    """Parsers.space.parse(" ")""" should {
+    """Parsers.spaces.parse(" ")""" should {
       val expected = Success(" ", 1)
       esc"""return $expected""" in {
-        val actual = Parsers.space.parse(" ")
+        val actual = Parsers.spaces.parse(" ")
         actual should be (expected)
       }
     }
 
-    """Parsers.space.parse("\t")""" should {
+    """Parsers.spaces.parse("\t")""" should {
       val expected = Success("\t", 1)
       esc"""return $expected""" in {
-        val actual = Parsers.space.parse("\t")
+        val actual = Parsers.spaces.parse("\t")
         actual should be (expected)
       }
     }
 
-    """Parsers.space.parse("\n")""" should {
+    """Parsers.spaces.parse("\n")""" should {
       val expected = Success("\n", 1)
       esc"""return $expected""" in {
-        val actual = Parsers.space.parse("\n")
+        val actual = Parsers.spaces.parse("\n")
         actual should be (expected)
       }
     }
 
-    """Parsers.space.parse("\r")""" should {
+    """Parsers.spaces.parse("\r")""" should {
       val expected = Success("\r", 1)
       esc"""return $expected""" in {
-        val actual = Parsers.space.parse("\r")
+        val actual = Parsers.spaces.parse("\r")
         actual should be (expected)
       }
     }
 
     forAll(Gen.alphaNumStr) { value =>
       whenever(value.nonEmpty && value.forall(!" \t\n\r".contains(_))) {
-        raw"""Parsers.space.parse("$value")""" should {
+        raw"""Parsers.spaces.parse("$value")""" should {
           esc"""return Failure(_, 0, _)""" in {
-            val actual = Parsers.space.parse(value)
+            val actual = Parsers.spaces.parse(value)
             actual should matchPattern { case Failure(_, 0, _) => }
           }
         }
@@ -492,10 +569,10 @@ class ParsersSpec extends WordSpec
       ) {
         val whitespaceString = whitespace.toString * howMany
         val value = whitespaceString + nonWhiteSpace
-        raw"""Parsers.space.parse("$value")""" should {
+        raw"""Parsers.spaces.parse("$value")""" should {
           val expected = Success(whitespaceString, whitespaceString.length)
           esc"""return $expected""" in {
-            val actual = Parsers.space.parse(value)
+            val actual = Parsers.spaces.parse(value)
             actual should be (expected)
           }
         }

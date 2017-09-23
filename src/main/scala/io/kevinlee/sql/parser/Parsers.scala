@@ -27,15 +27,17 @@ object Parsers {
   val Digit: NamedFunction[Char, Boolean] =
     NamedFunction('0' to '9' contains (_: Char), "Digit")
 
-  val alphabetLower: P[String] = P(CharsWhile(AlphabetLower).!)
+  val alphabetsLower: P[String] = P(CharsWhile(AlphabetLower).!)
 
-  val alphabetUpper: P[String] = P(CharsWhile(AlphabetUpper).!)
+  val alphabetsUpper: P[String] = P(CharsWhile(AlphabetUpper).!)
 
-  val digit: P[String] = P( CharsWhile(Digit).!)
+  val alphabets: P[String] = P(alphabetsLower | alphabetsUpper).rep(1).!
 
-  val alphaNumeric: P[String] = P(digit | alphabetLower | alphabetUpper).rep(1).!
+  val digits: P[String] = P( CharsWhile(Digit).!)
 
-  val space: P[String] = P(CharsWhile(Whitespace).!)
+  val alphaNumerics: P[String] = P(digits | alphabetsLower | alphabetsUpper).rep(1).!
+
+  val spaces: P[String] = P(CharsWhile(Whitespace).!)
 
 
   """
