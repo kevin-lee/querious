@@ -14,6 +14,8 @@ class ParsersSpec extends WordSpec
                      with GeneratorDrivenPropertyChecks
                      with Matchers {
 
+  val escapingChars = List("\\\"", "\\/", "\\\\", "\\b", "\\f", "\\n", "\\r", "\\t")
+
   "Parsers.AlphabetLower" when {
     "Parsers.AlphabetLower(lower case Char)" should {
       val expected = true
@@ -573,6 +575,79 @@ class ParsersSpec extends WordSpec
           val expected = Success(whitespaceString, whitespaceString.length)
           esc"""return $expected""" in {
             val actual = Parsers.spaces.parse(value)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+  }
+
+
+  "Parsers.stringChars" when {
+    """Parsers.stringChars.parse("''")""" should {
+      """return Failure(_, 0, _)""" in {
+        val actual = Parsers.stringChars.parse("''")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    """Parsers.stringChars.parse("\\")""" should {
+      """return Failure(_, 0, _)""" in {
+        val actual = Parsers.stringChars.parse("\\")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    forAll(Gen.alphaNumStr) { value =>
+      whenever(value.nonEmpty &&
+               value.forall(x => x.isUpper || x.isLower || x.isDigit)) {
+        raw"""Parsers.stringChars.parse("$value")""" should {
+          raw"""return Success($value, ${value.length})""" in {
+            val expected = Success(value, value.length)
+            val actual = Parsers.stringChars.parse(value)
+            actual should be (expected)
+          }
+        }
+      }
+    }
+
+
+    raw"""Parsers.stringChars.parse(one of ${escapingChars.map(x => esc"$x").mkString("[", ", ", "]")})""" should {
+      raw"""return Failure(_, 0, _)""" in {
+        forAll(Gen.oneOf(escapingChars)) { value =>
+          whenever(escapingChars.contains(value)) {
+            val actual = Parsers.stringChars.parse(value)
+            actual should matchPattern { case Failure(_, 0, _) => }
+          }
+        }
+      }
+    }
+
+  }
+
+
+  "Parsers.escape" when {
+    """Parsers.escape.parse("'")""" should {
+      """return Failure(_, 0, _)""" in {
+        val actual = Parsers.escape.parse("'")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    """Parsers.escape.parse("\\")""" should {
+      """return Failure(_, 0, _)""" in {
+        val actual = Parsers.escape.parse("\\")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+
+    raw"""Parsers.escape.parse(one of ${escapingChars.map(x => esc"$x").mkString("[", ", ", "]")})""" should {
+      raw"""return Success""" in {
+        forAll(Gen.oneOf(escapingChars)) { value =>
+          whenever(escapingChars.contains(value)) {
+            val expected = Success(value, value.length)
+            val actual = Parsers.escape.parse(value)
             actual should be (expected)
           }
         }

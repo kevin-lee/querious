@@ -27,6 +27,9 @@ object Parsers {
   val Digit: NamedFunction[Char, Boolean] =
     NamedFunction('0' to '9' contains (_: Char), "Digit")
 
+  val StringChar: NamedFunction[Char, Boolean] =
+    NamedFunction(!"'\\".contains(_: Char), "StringChar")
+
   val alphabetsLower: P[String] = P(CharsWhile(AlphabetLower).!)
 
   val alphabetsUpper: P[String] = P(CharsWhile(AlphabetUpper).!)
@@ -39,6 +42,13 @@ object Parsers {
 
   val spaces: P[String] = P(CharsWhile(Whitespace).!)
 
+  /*
+   * \" \/ \\ \b \f \n \r \t
+   */
+  val escape: P[String] = P((P("""\""" ~ CharIn("""/"\bfnrt""")) | P("''")).!)
+
+  val stringChars: P[String] = P(CharsWhile(StringChar).!)
+  val strings: P[String] = P("'" ~/ (stringChars | escape).rep.! ~ "'")
 
   """
     |SELECT *
