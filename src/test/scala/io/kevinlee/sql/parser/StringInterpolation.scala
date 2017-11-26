@@ -14,6 +14,8 @@ object StringInterpolation extends App {
                                  .replaceAllLiterally("\r", "\\r")
                                  .replaceAllLiterally("\t", "\\t")
                                  .replaceAllLiterally("\"", """\"""")
+                                 .replaceAllLiterally("\b", "\\b")
+                                 .replaceAllLiterally("\f", "\\f")
         builder append strings.next
       }
       builder.toString
