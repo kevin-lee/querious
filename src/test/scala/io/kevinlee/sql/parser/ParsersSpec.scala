@@ -16,6 +16,40 @@ class ParsersSpec extends WordSpec
 
   val escapingChars = List("\\\"", "\\/", "\\\\", "\\b", "\\f", "\\n", "\\r", "\\t")
 
+
+
+  "Parsers.`true`" when {
+    """Parsers.true.parse("true")""" should {
+      val expected = Success(true, 4)
+      s"return $expected" in {
+        val actual = Parsers.`true`.parse("true")
+        actual should be (expected)
+      }
+    }
+    """Parsers.true.parse("false")""" should {
+      s"return Failure" in {
+        val actual = Parsers.`true`.parse("false")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+  }
+
+  "Parsers.`false`" when {
+    """Parsers.false.parse("false")""" should {
+      val expected = Success(false, 5)
+      s"return $expected" in {
+        val actual = Parsers.`false`.parse("false")
+        actual should be (expected)
+      }
+    }
+    """Parsers.false.parse("true")""" should {
+      s"return Failure" in {
+        val actual = Parsers.`false`.parse("true")
+        actual should matchPattern { case Failure(_, 0, _) => }
+      }
+    }
+  }
+
   "Parsers.AlphabetLower" when {
     "Parsers.AlphabetLower(lower case Char)" should {
       val expected = true
@@ -635,6 +669,14 @@ class ParsersSpec extends WordSpec
       }
     }
 
+    """Parsers.escape.parse("''")""" should {
+      """return Success("'", 2)""" in {
+        val expected = Success("'", 2)
+        val actual = Parsers.escape.parse("''")
+        actual should be (expected)
+      }
+    }
+
     """Parsers.escape.parse("\\")""" should {
       """return Failure(_, 0, _)""" in {
         val actual = Parsers.escape.parse("\\")
@@ -651,6 +693,64 @@ class ParsersSpec extends WordSpec
             actual should be (expected)
           }
         }
+      }
+    }
+
+  }
+
+  "Parsers.strings" when {
+    """Parsers.strings.parse("''")""" should {
+      """return Success""" in {
+        val expected = Success("", 2)
+        val actual = Parsers.strings.parse("''")
+        actual should be (expected)
+      }
+    }
+
+    forAll(Gen.alphaNumStr) { value =>
+      whenever(value.nonEmpty &&
+        value.forall(x => x.isUpper || x.isLower || x.isDigit)) {
+        raw"""Parsers.strings.parse("'$value'")""" should {
+          raw"""return Success($value, ${value.length + 2})""" in {
+            val expected = Success(value, value.length + 2)
+            val actual = Parsers.strings.parse("'" + value + "'")
+            actual should be(expected)
+          }
+        }
+      }
+    }
+
+    """Parsers.strings.parse("''''")""" should {
+      val expected = Success("'", 4)
+      raw"""return $expected""" in {
+        val actual = Parsers.strings.parse("''''")
+        actual should be (expected)
+      }
+    }
+    """Parsers.strings.parse("'abc''def'")""" should {
+      val expectedString = "abc'def"
+      val expected = Success(expectedString, expectedString.length + 3)
+      raw"""return $expected""" in {
+        val actual = Parsers.strings.parse("'abc''def'")
+        actual should be (expected)
+      }
+    }
+
+    """Parsers.strings.parse("'abc''''def'")""" should {
+      val expectedString = "abc''def"
+      val expected = Success(expectedString, expectedString.length + 4)
+      raw"""return $expected""" in {
+        val actual = Parsers.strings.parse("'abc''''def'")
+        actual should be (expected)
+      }
+    }
+
+    """Parsers.strings.parse("'abc''de''f'")""" should {
+      val expectedString = "abc'de'f"
+      val expected = Success(expectedString, expectedString.length + 4)
+      raw"""return $expected""" in {
+        val actual = Parsers.strings.parse("'abc''de''f'")
+        actual should be (expected)
       }
     }
 

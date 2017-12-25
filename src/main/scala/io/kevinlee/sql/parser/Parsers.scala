@@ -15,6 +15,9 @@ object Parsers {
     override val toString: String = name
   }
 
+  val `true`: P[Boolean] = P("true").map(_ => true)
+  val `false`: P[Boolean] = P("false").map(_ => false)
+
   val AlphabetLower: NamedFunction[Char, Boolean] =
     NamedFunction('a' to 'z' contains (_: Char), "AlphabetLower")
 
@@ -28,7 +31,7 @@ object Parsers {
     NamedFunction('0' to '9' contains (_: Char), "Digit")
 
   val StringChar: NamedFunction[Char, Boolean] =
-    NamedFunction(!"'\\".contains(_: Char), "StringChar")
+    NamedFunction(!"''\\".contains(_: Char), "StringChar")
 
   val alphabetsLower: P[String] = P(CharsWhile(AlphabetLower).!)
 
@@ -45,10 +48,11 @@ object Parsers {
   /*
    * \" \/ \\ \b \f \n \r \t
    */
-  val escape: P[String] = P((P("""\""" ~ CharIn("""/"\bfnrt""")) | P("''")).!)
+  val escape: P[String] =
+    P("""\""" ~ CharIn("""/"\bfnrt""")).! | P("''").map(_ => "'")
 
-  val stringChars: P[String] = P(CharsWhile(StringChar).!)
-  val strings: P[String] = P("'" ~/ (stringChars | escape).rep.! ~ "'")
+  val stringChars: P[String] = P(CharsWhile(StringChar)).!
+  val strings: P[String] = P("'" ~/ (stringChars | escape).rep.map(_.mkString) ~ "'")
 
   """
     |SELECT *

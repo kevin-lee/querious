@@ -13,5 +13,5 @@ libraryDependencies ++= Seq(
   "org.scalatest"  %% "scalatest"  % "3.0.1"  % Test,
 //  "org.scalacheck" %% "scalacheck" % "1.12.6" % Test,
 //  "org.scalatest"  %% "scalatest"  % "2.2.6"  % Test,
-  "com.lihaoyi"    %% "fastparse"  % "0.4.3"
+  "com.lihaoyi"    %% "fastparse"  % "1.0.0"
 )
