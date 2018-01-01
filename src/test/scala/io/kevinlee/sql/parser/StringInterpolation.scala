@@ -22,14 +22,4 @@ object StringInterpolation extends App {
     }
   }
 
-
-  private val nl = "\n"
-  private val dq = "\""
-
-  // blah blah\nblah \"blah\"\nblah
-  println(esc"blah blah\nblah ${dq}blah${dq}${nl}blah")
-  
-  // blah blah\nblah \"blah\"\nblah
-  println(esc"""blah blah\nblah ${dq}blah${dq}${nl}blah""")
-
 }
