@@ -1,6 +1,9 @@
 package io.kevinlee.sql.parser
 
 import fastparse.all._
+import io.kevinlee.sql.parser.BooleanPredicates.BooleanPredicate
+import io.kevinlee.sql.parser.NumberPredicates.NumberPredicate
+import io.kevinlee.sql.parser.StringPredicates.StringPredicate
 
 import scala.language.postfixOps
 
@@ -39,25 +42,112 @@ object Parsers {
 
   val alphabets: P[String] = P(alphabetsLower | alphabetsUpper).rep(1).!
 
-  val digits: P[String] = P( CharsWhile(Digit).!)
+  val digits: P[Unit] = P(CharsWhile(Digit))
+
+  val expondent: P[Unit] = P(CharIn("eE") ~ CharIn("+-").? ~ digits)
+  val factional: P[Unit] = P(CharIn(".") ~ digits)
+  val integral: P[Unit] = P(("0" | CharIn('1' to '9')) ~ digits.?)
+
+  val numbers: P[BigDecimal] =
+    P(CharIn("+-").? ~ integral ~ factional.? ~ expondent.?).!.map(BigDecimal(_))
 
   val alphaNumerics: P[String] = P(digits | alphabetsLower | alphabetsUpper).rep(1).!
 
-  val spaces: P[String] = P(CharsWhile(Whitespace).!)
+  val spaces: P[Unit] = P(CharsWhile(Whitespace))
+
+  val hexDigit: P[Unit] = P(CharIn('0' to '9', 'a' to 'f', 'A' to 'F'))
+
+  val unicodeEscape: P[Unit] = P("u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit)
 
   /*
    * \" \/ \\ \b \f \n \r \t
+   * OR
+   * Escaped unicode chars like \u0000
+   * OR
+   * ''
    */
-  val escape: P[String] =
-    P("""\""" ~ CharIn("""/"\bfnrt""")).! | P("''").map(_ => "'")
+  val escape: P[Any] =
+    P("""\""" ~ (CharIn("""/"\bfnrt""") | unicodeEscape)) | P("''").map(_ => "'")
 
   val stringChars: P[String] = P(CharsWhile(StringChar)).!
   val strings: P[String] = P("'" ~/ (stringChars | escape).rep.map(_.mkString) ~ "'")
 
-  """
-    |SELECT *
-    |  FROM items
-    | WHERE item_id = 1 AND (price > 100 OR name = 'awesome product')
-  """.stripMargin
+  /*
+   * a_test
+   * ab_test
+   * A_TEST
+   * AB_TEST
+   * _ABC
+   * _abc
+   * a_test1
+   * a_1test1
+   */
+  val identifiter: P[String] = P((alphabets | "_") ~ P(alphaNumerics | "_").rep).!
+
+  val equalitySigns: P[Unit] = "=" | "!="
+  val comparisonSigns: P[Unit] = equalitySigns | "<=" | "<" | ">=" | ">"
+
+  /*
+   * a = 10
+   * a != 10
+   * a_test = 'abc'
+   * b = false
+   */
+  val booleanPredicateParser: P[BooleanPredicate] = P(identifiter.! ~ spaces.? ~ equalitySigns.! ~ spaces.? ~ (`true` | `false`)) map {
+    case (field, "=", booleanValue) => BooleanPredicates.Eq(field, booleanValue)
+    case (field, "!=", booleanValue) => BooleanPredicates.Ne(field, booleanValue)
+  }
+
+  /*
+   * a = 10
+   * a != 10
+   * a < 10
+   * a <= 10
+   * a > 10
+   * a >= 10
+   */
+  val numberPredicateParser: P[NumberPredicate] = P(identifiter.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ numbers) map {
+    case (field, "=", numberValue)  => NumberPredicates.Eq(field, numberValue)
+    case (field, "!=", numberValue) => NumberPredicates.Ne(field, numberValue)
+    case (field, "<", numberValue)  => NumberPredicates.Lt(field, numberValue)
+    case (field, "<=", numberValue) => NumberPredicates.Le(field, numberValue)
+    case (field, ">", numberValue)  => NumberPredicates.Gt(field, numberValue)
+    case (field, ">=", numberValue) => NumberPredicates.Ge(field, numberValue)
+  }
+
+  val stringPredicateParser: P[StringPredicate] = P(identifiter.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ strings) map {
+    case (field, "=", stringValue)  => StringPredicates.Eq(field, stringValue)
+    case (field, "!=", stringValue) => StringPredicates.Ne(field, stringValue)
+    case (field, "<", stringValue)  => StringPredicates.Lt(field, stringValue)
+    case (field, "<=", stringValue) => StringPredicates.Le(field, stringValue)
+    case (field, ">", stringValue)  => StringPredicates.Gt(field, stringValue)
+    case (field, ">=", stringValue) => StringPredicates.Ge(field, stringValue)
+  }
+
+  val predicates: P[Clause] = P(booleanPredicateParser | numberPredicateParser | stringPredicateParser)
+
+  val parens: P[Clause] = P("(" ~/ spaces.? ~ clause ~ spaces.? ~ ")")
+
+  val predicateOrParens = P(predicates | parens)
+
+  val clause: P[Clause] = P(predicateOrParens ~ (spaces.rep(1) ~ (StringInIgnoreCase("and") | StringInIgnoreCase("or")).! ~ spaces.rep(1) ~ predicateOrParens).rep.?) map eval
+
+  val where: P[Clause] = StringInIgnoreCase("where") ~ spaces.rep(1) ~ clause
+
+  def eval(clauses: (Clause, Option[Seq[(String, Clause)]])): Clause = clauses match {
+      case (first, maybeRest) =>
+        def eval(first: Clause,
+                 maybeRest: Option[Seq[(String, Clause)]]): Clause = maybeRest match {
+            case Some((junction, clause) +: tail) if junction.equalsIgnoreCase("and") =>
+              eval(And(first, clause), Some(tail))
+            case Some((junction, clause) +: tail) if junction.equalsIgnoreCase("or") =>
+              Or(first, eval(clause, Some(tail)))
+            case Some(Seq()) =>
+              first
+            case None =>
+              first
+          }
+        eval(first, maybeRest)
+    }
 
 }

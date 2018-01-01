@@ -1,10 +1,11 @@
 package io.kevinlee.sql.parser
 
 import fastparse.core.Parsed.{Failure, Success}
+import io.kevinlee.sql.parser.TestUtils._
+import io.kevinlee.sql.parser.StringInterpolation._
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, WordSpec}
-import StringInterpolation._
 
 /**
   * @author Kevin Lee
@@ -15,8 +16,6 @@ class ParsersSpec extends WordSpec
                      with Matchers {
 
   val escapingChars = List("\\\"", "\\/", "\\\\", "\\b", "\\f", "\\n", "\\r", "\\t")
-
-
 
   "Parsers.`true`" when {
     """Parsers.true.parse("true")""" should {
@@ -394,9 +393,14 @@ class ParsersSpec extends WordSpec
 
   "Parsers.digits Spec" when {
     "digits.parse(\"1234\")" should {
-      """return Success("1234", 4)""" in {
-        val expected = Success("1234", 4)
+      """return Success((), 4)""" in {
+        val expected = Success((), 4)
         val actual = Parsers.digits.parse("1234")
+        actual should be (expected)
+      }
+      """return Success("1234", 4) if captured""" in {
+        val expected = Success("1234", 4)
+        val actual = Parsers.digits.parserOfString.parse("1234")
         actual should be (expected)
       }
     }
@@ -409,30 +413,35 @@ class ParsersSpec extends WordSpec
     }
 
     "digits.parse(non-negative int in String)" should {
-      "return Success(int parsed, the length of the String)" in {
+      "return Success((), the length of the String) and Success(int parsed in String, the length of the String) if captured" in {
         forAll { (i: Int) =>
           whenever(i >= 0) {
             val input = i.toString
-            val expected = Success(input, input.length)
+            val expected = Success((), input.length)
             val actual = Parsers.digits.parse(input)
             actual should be (expected)
+
+            val expectedCapture = Success(input, input.length)
+            val actualCaptured = Parsers.digits.parserOfString.parse(input)
+            actualCaptured should be (expectedCapture)
           }
         }
       }
     }
 
     "digits.parse(int between 0 and 10 in String)" should {
-      "return Success(int parsed, the length of the String)" in {
+      "return Success((), the length of the String) and Success(int parsed in String, the length of the String) if captured" in {
         forAll(Gen.choose(1, 10)) { i =>
           val input = i.toString
-          val expected = Success(input, input.length)
+          val expected = Success((), input.length)
           val actual = Parsers.digits.parse(input)
-          println(s"i: $i / actual: $actual / expected: $expected")
           actual should be (expected)
+          val expectedCapture = Success(input, input.length)
+          val actualCaptured = Parsers.digits.parserOfString.parse(input)
+          actualCaptured should be (expectedCapture)
         }
       }
     }
-
 
   }
 
@@ -550,34 +559,54 @@ class ParsersSpec extends WordSpec
     }
 
     """Parsers.spaces.parse(" ")""" should {
-      val expected = Success(" ", 1)
+      val expected = Success((), 1)
       esc"""return $expected""" in {
         val actual = Parsers.spaces.parse(" ")
         actual should be (expected)
       }
+      val expectedCapture = Success(" ", 1)
+      esc"""return $expectedCapture if captured""" in {
+        val actual = Parsers.spaces.parserOfString.parse(" ")
+        actual should be (expectedCapture)
+      }
     }
 
     """Parsers.spaces.parse("\t")""" should {
-      val expected = Success("\t", 1)
+      val expected = Success((), 1)
       esc"""return $expected""" in {
         val actual = Parsers.spaces.parse("\t")
         actual should be (expected)
       }
+      val expectedCapture = Success("\t", 1)
+      esc"""return $expectedCapture if captured""" in {
+        val actual = Parsers.spaces.parserOfString.parse("\t")
+        actual should be (expectedCapture)
+      }
     }
 
     """Parsers.spaces.parse("\n")""" should {
-      val expected = Success("\n", 1)
+      val expected = Success((), 1)
       esc"""return $expected""" in {
         val actual = Parsers.spaces.parse("\n")
         actual should be (expected)
       }
+      val expectedCapture = Success("\n", 1)
+      esc"""return $expectedCapture if captured""" in {
+        val actual = Parsers.spaces.parserOfString.parse("\n")
+        actual should be (expectedCapture)
+      }
     }
 
     """Parsers.spaces.parse("\r")""" should {
-      val expected = Success("\r", 1)
+      val expected = Success((), 1)
       esc"""return $expected""" in {
         val actual = Parsers.spaces.parse("\r")
         actual should be (expected)
+      }
+      val expectedCapture = Success("\r", 1)
+      esc"""return $expectedCapture if captured""" in {
+        val actual = Parsers.spaces.parserOfString.parse("\r")
+        actual should be (expectedCapture)
       }
     }
 
@@ -606,10 +635,15 @@ class ParsersSpec extends WordSpec
         val whitespaceString = whitespace.toString * howMany
         val value = whitespaceString + nonWhiteSpace
         raw"""Parsers.spaces.parse("$value")""" should {
-          val expected = Success(whitespaceString, whitespaceString.length)
+          val expected = Success((), whitespaceString.length)
           esc"""return $expected""" in {
             val actual = Parsers.spaces.parse(value)
             actual should be (expected)
+          }
+          val expectedCapture = Success(whitespaceString, whitespaceString.length)
+          esc"""return $expectedCapture""" in {
+            val actual = Parsers.spaces.parserOfString.parse(value)
+            actual should be (expectedCapture)
           }
         }
       }
@@ -688,9 +722,13 @@ class ParsersSpec extends WordSpec
       raw"""return Success""" in {
         forAll(Gen.oneOf(escapingChars)) { value =>
           whenever(escapingChars.contains(value)) {
-            val expected = Success(value, value.length)
+            val expected = Success((), value.length)
             val actual = Parsers.escape.parse(value)
             actual should be (expected)
+
+            val expectedCapture = Success(value, value.length)
+            val actualCaptured = Parsers.escape.parserOfString.parse(value)
+            actualCaptured should be (expectedCapture)
           }
         }
       }
@@ -755,4 +793,548 @@ class ParsersSpec extends WordSpec
     }
 
   }
+
+
+  "Parsers.booleanPredicateParser" can {
+    forAll(
+      Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z'))),
+      Gen.listOf(
+        Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')))
+      ).map(_.mkString),
+      Gen.oneOf(true, false)) { (firstChar: Char, rest: String, value: Boolean) =>
+
+      whenever(firstChar.isAllAlphaNumericOr('_') &&
+               rest.isAllAlphaNumericOr('_')) {
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = $value"""
+
+          s"""booleanPredicateParser.parse($input)""" should {
+            val expected = Success(BooleanPredicates.Eq(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.booleanPredicateParser.parse(input)
+              actual should be(expected)
+            }
+
+          }
+        }
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != $value"""
+
+          s"""booleanPredicateParser.parse($input)""" should {
+            val expected = Success(BooleanPredicates.Ne(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.booleanPredicateParser.parse(input)
+              actual should be(expected)
+            }
+
+          }
+        }
+
+      }
+
+    }
+  }
+
+
+  "Parsers.numberPredicateParser" can {
+    forAll(
+      Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z'))),
+      Gen.listOf(
+        Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')))
+      ).map(_.mkString),
+      Gen.numStr) { (firstChar: Char, rest: String, valueString: String) =>
+
+      whenever(firstChar.isAllAlphaNumericOr('_') &&
+               rest.isAllAlphaNumericOr('_') &&
+               valueString.isAllDigits) {
+        val value = BigDecimal(valueString)
+
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Eq(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Ne(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Le so" when {
+          val field = firstChar + rest
+          val input = s"""$field <= $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Le(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Lt so" when {
+          val field = firstChar + rest
+          val input = s"""$field < $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Lt(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ge so" when {
+          val field = firstChar + rest
+          val input = s"""$field >= $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Ge(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Gt so" when {
+          val field = firstChar + rest
+          val input = s"""$field > $value"""
+
+          s"""numberPredicateParser.parse($input)""" should {
+            val expected = Success(NumberPredicates.Gt(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.numberPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+      }
+
+    }
+  }
+
+
+  "Parsers.stringPredicateParser" can {
+    forAll(
+      Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z'))),
+      Gen.listOf(
+        Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')))
+      ).map(_.mkString),
+      Gen.alphaNumStr) { (firstChar: Char, rest: String, value: String) =>
+
+      whenever(firstChar.isAllAlphaNumericOr('_') &&
+               rest.isAllAlphaNumericOr('_') &&
+               value.isAllAlphaNumeric) {
+
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Eq(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Ne(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Le so" when {
+          val field = firstChar + rest
+          val input = s"""$field <= '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Le(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Lt so" when {
+          val field = firstChar + rest
+          val input = s"""$field < '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Lt(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ge so" when {
+          val field = firstChar + rest
+          val input = s"""$field >= '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Ge(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Gt so" when {
+          val field = firstChar + rest
+          val input = s"""$field > '$value'"""
+
+          s"""stringPredicateParser.parse($input)""" should {
+            val expected = Success(StringPredicates.Gt(field, value), input.length)
+            s"return $expected" in {
+              val actual = Parsers.stringPredicateParser.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+      }
+
+    }
+  }
+
+
+  "Parsers.predicates" can {
+    forAll(
+      Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z'))),
+      Gen.listOf(
+        Gen.oneOf('_' +: (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')))
+      ).map(_.mkString),
+      Gen.oneOf(true, false),
+      Gen.numStr,
+      Gen.alphaNumStr) { (firstChar: Char,
+                          rest: String,
+                          booleanValue: Boolean,
+                          numberValueString: String,
+                          stringValue: String) =>
+
+      whenever(firstChar.isAllAlphaNumericOr('_') &&
+               rest.isAllAlphaNumericOr('_') &&
+               numberValueString.isAllDigits &&
+               stringValue.isAllAlphaNumeric) {
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = $booleanValue"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(BooleanPredicates.Eq(field, booleanValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+
+          }
+        }
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != $booleanValue"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(BooleanPredicates.Ne(field, booleanValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+
+          }
+        }
+
+        val numberValue = BigDecimal(numberValueString)
+
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Eq(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Ne(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Le so" when {
+          val field = firstChar + rest
+          val input = s"""$field <= $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Le(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Lt so" when {
+          val field = firstChar + rest
+          val input = s"""$field < $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Lt(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ge so" when {
+          val field = firstChar + rest
+          val input = s"""$field >= $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Ge(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Gt so" when {
+          val field = firstChar + rest
+          val input = s"""$field > $numberValueString"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(NumberPredicates.Gt(field, numberValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+
+        "handle Eq so" when {
+          val field = firstChar + rest
+          val input = s"""$field = '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Eq(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ne so" when {
+          val field = firstChar + rest
+          val input = s"""$field != '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Ne(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Le so" when {
+          val field = firstChar + rest
+          val input = s"""$field <= '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Le(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Lt so" when {
+          val field = firstChar + rest
+          val input = s"""$field < '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Lt(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Ge so" when {
+          val field = firstChar + rest
+          val input = s"""$field >= '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Ge(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+        "handle Gt so" when {
+          val field = firstChar + rest
+          val input = s"""$field > '$stringValue'"""
+
+          s"""predicates.parse($input)""" should {
+            val expected = Success(StringPredicates.Gt(field, stringValue), input.length)
+            s"return $expected" in {
+              val actual = Parsers.predicates.parse(input)
+              actual should be(expected)
+            }
+          }
+        }
+
+      }
+
+    }
+  }
+
+  val whereClauseData = List(
+    "num = 999 OR abc != true OR name = 'Kevin'" ->
+      Or(
+        NumberPredicates.Eq("num", 999),
+        Or(
+          BooleanPredicates.Ne("abc", true),
+          StringPredicates.Eq("name", "Kevin")
+        )
+      ),
+    "num = 999 AND abc != true AND name = 'Kevin'" ->
+      And(
+        And(
+          NumberPredicates.Eq("num", 999),
+          BooleanPredicates.Ne("abc", true)
+        ),
+        StringPredicates.Eq("name", "Kevin")
+      ),
+    "num = 999 And abc != true OR name = 'Kevin'" ->
+      Or(
+        And(
+          NumberPredicates.Eq("num", 999),
+          BooleanPredicates.Ne("abc", true)
+        ),
+        StringPredicates.Eq("name", "Kevin")
+      ),
+    "num = 999 OR abc != true AND name = 'Kevin'" ->
+      Or(
+        NumberPredicates.Eq("num", 999),
+        And(
+          BooleanPredicates.Ne("abc", true),
+          StringPredicates.Eq("name", "Kevin")
+        )
+      ),
+    "num = 999 OR abc != true OR name = 'Kevin' AND price >= 50.50" ->
+      Or(
+        NumberPredicates.Eq("num", 999),
+        Or(
+          BooleanPredicates.Ne("abc", true),
+          And(
+            StringPredicates.Eq("name", "Kevin"),
+            NumberPredicates.Ge("price", 50.50)
+          )
+        )
+      ),
+    "item_id =   1   AND   (  price > 100 OR c = true OR name = 'awesome product' AND (something <= 'blah' OR (a = true AND b != true  ) AND d < 12345))" ->
+      And(
+        NumberPredicates.Eq("item_id", 1),
+        Or(
+          NumberPredicates.Gt("price", 100),
+          Or(
+            BooleanPredicates.Eq("c", true),
+            And(
+              StringPredicates.Eq("name", "awesome product"),
+              Or(
+                StringPredicates.Le("something", "blah"),
+                And(
+                  And(
+                    BooleanPredicates.Eq("a", true),
+                    BooleanPredicates.Ne("b", true)
+                  ),
+                  NumberPredicates.Lt("d", 12345)
+                )
+              )
+            )
+          )
+        )
+      )
+  )
+
+  "Parsers.clause" when {
+    for (
+      (input, expectedClause) <- whereClauseData;
+      expected = Success(expectedClause, input.length)) {
+      s"clause.parse($input)" should {
+        s"return $expected" in {
+          val actual = Parsers.clause.parse(input)
+          actual should be (expected)
+        }
+      }
+    }
+  }
+
+
+  "Parsers.where" when {
+    for (
+      (whereClause, expectedClause) <- whereClauseData;
+      input = s"WHERE $whereClause";
+      expected = Success(expectedClause, input.length)) {
+      s"where.parse($input)" should {
+        s"return $expected" in {
+          val actual = Parsers.where.parse(input)
+          actual should be (expected)
+        }
+      }
+    }
+  }
+
 }
