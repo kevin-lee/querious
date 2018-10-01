@@ -11,7 +11,7 @@ import org.scalatest.{Matchers, WordSpec}
   * @author Kevin Lee
   * @since 2017-07-22
   */
-class ParsersSpec extends WordSpec
+class ParsersSpecWithScalaTest extends WordSpec
                      with GeneratorDrivenPropertyChecks
                      with Matchers {
 
