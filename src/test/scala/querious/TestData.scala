@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 import StringInterpolation._
 

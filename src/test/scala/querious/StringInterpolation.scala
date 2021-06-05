@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 object StringInterpolation extends App {
   implicit class EscapeNewLineAndDoubleQuote(val sc: StringContext) extends AnyVal {

@@ -1,5 +1,3 @@
-package io.kevinlee.sql
-
 import eu.timepit.refined._
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.numeric._
@@ -11,7 +9,7 @@ import shapeless.{ ::, HNil }
   * @author Kevin Lee
   * @since 2020-12-08
   */
-package object parser {
+package object querious {
 
   final case class LowerCaseAlphabet()
   object LowerCaseAlphabet {

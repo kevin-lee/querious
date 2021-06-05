@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 import eu.timepit.refined._
 import eu.timepit.refined.auto._

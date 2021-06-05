@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 import hedgehog._
 import hedgehog.runner._
