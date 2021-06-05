@@ -1,8 +1,8 @@
-package io.kevinlee.sql.parser
+package querious
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.{Failure, Success}
-import io.kevinlee.sql.parser.TestUtils._
+import querious.TestUtils._
 
 import hedgehog._
 import hedgehog.runner._

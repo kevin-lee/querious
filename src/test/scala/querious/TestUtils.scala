@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 /**
   * @author Kevin Lee

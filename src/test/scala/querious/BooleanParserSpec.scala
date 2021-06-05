@@ -1,4 +1,4 @@
-package io.kevinlee.sql.parser
+package querious
 
 import fastparse.core.Parsed.{Failure, Success}
 

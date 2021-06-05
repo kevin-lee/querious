@@ -1,9 +1,9 @@
 
 ThisBuild / scalaVersion := "2.12.13"
 
-ThisBuild / name := "sql-parser-scala"
+ThisBuild / name := "querious"
 ThisBuild / organization := "io.kevinlee"
-ThisBuild / version := "0.0.1"
+ThisBuild / version := "0.1.0"
 
 ThisBuild / crossScalaVersions := List("2.11.12", "2.12.13")
 

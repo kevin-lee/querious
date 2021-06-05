@@ -1,9 +1,12 @@
-package io.kevinlee.sql.parser
+package querious
 
 import fastparse.all._
-import io.kevinlee.sql.parser.BooleanPredicates.BooleanPredicate
-import io.kevinlee.sql.parser.NumberPredicates.NumberPredicate
-import io.kevinlee.sql.parser.StringPredicates.StringPredicate
+import BooleanPredicates.BooleanPredicate
+import NumberPredicates.NumberPredicate
+import StringPredicates.StringPredicate
+import querious.BooleanPredicates.BooleanPredicate
+import querious.NumberPredicates.NumberPredicate
+import querious.StringPredicates.StringPredicate
 
 /**
   * @author Kevin Lee
