@@ -6,6 +6,7 @@
 /*.iml
 /target/
 /project/target/
+/project/project/target/
 /bin/
 /tmp/
 /dist

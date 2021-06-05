@@ -5,16 +5,45 @@ import io.kevinlee.sql.parser.BooleanPredicates.BooleanPredicate
 import io.kevinlee.sql.parser.NumberPredicates.NumberPredicate
 import io.kevinlee.sql.parser.StringPredicates.StringPredicate
 
-import scala.language.postfixOps
-
 /**
   * @author Kevin Lee
   * @since 2017-07-15
   */
 object Parsers {
 
+  final val WhitespaceChars: List[Char] = List(
+    '\t',
+    '\n',
+    '\u000b',
+    '\f',
+    '\r',
+    '\u001c',
+    '\u001d',
+    '\u001e',
+    '\u001f',
+    ' ',
+    '\u1680',
+    '\u2000',
+    '\u2001',
+    '\u2002',
+    '\u2003',
+    '\u2004',
+    '\u2005',
+    '\u2006',
+    '\u2008',
+    '\u2009',
+    '\u200a',
+    '\u2028',
+    '\u2029',
+    '\u205f',
+    '\u3000'
+  )
+
+  final val NonWhitespaceCharRange: List[(Int, Int)] =
+    List(0 -> 8, 14 -> 27, 33 -> 5759, 5761 -> 8191, 8199 -> 8199, 8203 -> 8231, 8234 -> 8286, 8288 -> 12287, 12289 -> Char.MaxValue.toInt)
+
   case class NamedFunction[T, V](f: T => V, name: String) extends (T => V) {
-    def apply(t: T) = f(t)
+    def apply(t: T): V = f(t)
     override val toString: String = name
   }
 
@@ -28,7 +57,7 @@ object Parsers {
     NamedFunction('A' to 'Z' contains (_: Char), "AlphabetUpper")
 
   val Whitespace: NamedFunction[Char, Boolean] =
-    NamedFunction(" \t\r\n" contains (_: Char), "Whitespace")
+    NamedFunction(WhitespaceChars.contains(_: Char), "Whitespace")
 
   val Digit: NamedFunction[Char, Boolean] =
     NamedFunction('0' to '9' contains (_: Char), "Digit")
@@ -82,7 +111,7 @@ object Parsers {
    * a_test1
    * a_1test1
    */
-  val identifiter: P[String] = P((alphabets | "_") ~ P(alphaNumerics | "_").rep).!
+  val identifier: P[String] = P((alphabets | "_") ~ P(alphaNumerics | "_").rep).!
 
   val equalitySigns: P[Unit] = "=" | "!="
   val comparisonSigns: P[Unit] = equalitySigns | "<=" | "<" | ">=" | ">"
@@ -93,7 +122,7 @@ object Parsers {
    * a_test = 'abc'
    * b = false
    */
-  val booleanPredicateParser: P[BooleanPredicate] = P(identifiter.! ~ spaces.? ~ equalitySigns.! ~ spaces.? ~ (`true` | `false`)) map {
+  val booleanPredicateParser: P[BooleanPredicate] = P(identifier.! ~ spaces.? ~ equalitySigns.! ~ spaces.? ~ (`true` | `false`)) map {
     case (field, "=", booleanValue) => BooleanPredicates.Eq(field, booleanValue)
     case (field, "!=", booleanValue) => BooleanPredicates.Ne(field, booleanValue)
   }
@@ -106,7 +135,7 @@ object Parsers {
    * a > 10
    * a >= 10
    */
-  val numberPredicateParser: P[NumberPredicate] = P(identifiter.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ numbers) map {
+  val numberPredicateParser: P[NumberPredicate] = P(identifier.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ numbers) map {
     case (field, "=", numberValue)  => NumberPredicates.Eq(field, numberValue)
     case (field, "!=", numberValue) => NumberPredicates.Ne(field, numberValue)
     case (field, "<", numberValue)  => NumberPredicates.Lt(field, numberValue)
@@ -115,7 +144,7 @@ object Parsers {
     case (field, ">=", numberValue) => NumberPredicates.Ge(field, numberValue)
   }
 
-  val stringPredicateParser: P[StringPredicate] = P(identifiter.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ strings) map {
+  val stringPredicateParser: P[StringPredicate] = P(identifier.! ~ spaces.? ~ comparisonSigns.! ~ spaces.? ~ strings) map {
     case (field, "=", stringValue)  => StringPredicates.Eq(field, stringValue)
     case (field, "!=", stringValue) => StringPredicates.Ne(field, stringValue)
     case (field, "<", stringValue)  => StringPredicates.Lt(field, stringValue)
